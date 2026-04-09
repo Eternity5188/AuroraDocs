@@ -162,6 +162,14 @@ VLLM_PORT=8001
 CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 VITE_API_BASE_URL=http://localhost:8000/api
 EOF
+else
+    # 检查 .env 是否需要更新（PostgreSQL 旧配置）
+    if grep -q "postgresql://user:password" .env; then
+        echo "⚠️  Updating .env to use SQLite (faster setup)..."
+        sed -i 's|DATABASE_URL=postgresql://user:password.*|DATABASE_URL=sqlite:///./auroradocs.db|g' .env
+        sed -i 's|MODEL_BASE_PATH=.*|MODEL_BASE_PATH=./models|g' .env
+        sed -i 's|SAMPLE_UPLOAD_PATH=.*|SAMPLE_UPLOAD_PATH=./data/samples|g' .env
+    fi
 fi
 
 # 创建数据和模型目录（如果不存在）
