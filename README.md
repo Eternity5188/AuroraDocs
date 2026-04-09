@@ -11,7 +11,7 @@
 
 **通用文档智能生成平台** - 基于 LoRA 微调大模型，为各行业提供个性化文档生成解决方案
 
-[📖 文档](https://auroradocs.readthedocs.io/) • [🚀 快速开始](#快速开始) • [💬 讨论](https://github.com/your-repo/AuroraDocs/discussions) • [🐛 问题反馈](https://github.com/your-repo/AuroraDocs/issues)
+[🚀 快速开始](#快速开始) • [🐛 问题反馈](https://github.com/your-repo/AuroraDocs/issues)
 
 </div>
 
@@ -59,7 +59,6 @@
 - **AI 引擎**：Qwen2.5-14B + LoRA + DeepSpeed + vLLM
 - **任务队列**：Celery + Redis + Flower (监控)
 - **文件存储**：MinIO 对象存储
-- **监控**：Prometheus + Grafana
 
 ### 前端 (Lightweight Client)
 - **框架**：Vue 3 + TypeScript + Vite + Electron
@@ -67,13 +66,6 @@
 - **状态管理**：Pinia + Vuex 4
 - **图表可视化**：ECharts + D3.js
 - **富文本编辑**：Quill.js + Monaco Editor
-- **通信**：Axios + Socket.IO
-
-### 部署与运维
-- **容器化**：Docker + Docker Compose + Kubernetes
-- **反向代理**：Nginx + Traefik
-- **CI/CD**：GitHub Actions + Docker Hub
-- **监控告警**：ELK Stack + Sentry
 
 ---
 
@@ -115,13 +107,9 @@ E:\Software\AuroraDocs/
 ├── config/                   # ⚙️ 配置文件
 ├── docker/                   # 🐳 Docker 编排
 ├── docs/                     # 📚 项目文档
-│   ├── api/                 # API 文档
-│   ├── guides/              # 使用指南
-│   └── screenshots/         # 界面截图
 ├── scripts/                  # 🔧 构建脚本
 ├── .env.example             # 🔐 环境变量模板
 ├── docker-compose.yml       # 🐳 服务编排
-├── LICENSE                  # 📄 许可证
 └── README.md                # 📖 项目说明
 ```
 
@@ -227,70 +215,32 @@ npm run electron:build
 
 ---
 
-- NVIDIA GPU (推荐RTX 4090)用于后端服务器部署
+## 📖 使用指南
 
-### 部署说明
-后端服务建议部署在远程GPU服务器（如AutoDL、校园GPU集群），前端客户端可在Windows本地运行或通过Web浏览器访问。
+### 🎯 基础使用流程
 
-### 安装步骤
+1. **📤 上传样例文档**
+   - 支持 PDF、DOCX、TXT、MD 格式
+   - 建议上传 3-5 个高质量样例
 
-1. **克隆项目**
-   ```bash
-   git clone https://github.com/your-repo/AuroraDocs.git
-   cd AuroraDocs
-   ```
+2. **🔧 配置 API**
+   - 支持 OpenAI、Azure OpenAI、自定义 API
+   - 本地存储，不泄露密钥
 
-2. **后端设置**
-   ```bash
-   cd backend
-   python -m venv venv
-   source venv/bin/activate  # Windows: venv\Scripts\activate
-   pip install -r requirements.txt
-   ```
+3. **🚀 提交训练任务**
+   - 设置模型参数 (epochs, learning rate)
+   - 选择 Prompt 模板
 
-3. **前端设置**
-   ```bash
-   cd frontend
-   npm install
-   ```
+4. **📊 监控训练进度**
+   - 实时查看任务状态
+   - 下载训练结果
 
-4. **桌面应用打包**
-   ```bash
-   cd frontend
-   npm run electron:build
-   ```
-   打包产物会生成在 `frontend/dist_electron` 目录下，可用于 Windows 安装包或 ZIP 下载。
+---
 
-5. **环境配置**
-   ```bash
-   cd backend
-   copy ..\.env.example .env
-   # 编辑 backend\.env 文件，配置数据库、Redis、MinIO 等信息
-
-   cd ..\frontend
-   copy .env.example .env
-   # 配置 VITE_API_BASE_URL 为后端地址
-   ```
-
-5. **启动服务**
-   ```bash
-   # 启动后端 API
-   cd backend
-   uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-
-   # 启动 Celery worker (另开终端)
-   cd backend
-   celery -A app.tasks.celery_app.celery_app worker --loglevel=info
-
-   # 启动前端 (另开终端)
-   cd frontend
-   npm run dev
-   ```
-
-## 开发指南
+## 🧪 开发指南
 
 ### 代码规范
-- 后端：遵循PEP 8，类型注解
+- 后端：遵循 PEP 8，类型注解
 - 前端：ESLint + Prettier，Vue 3 Composition API
 - 提交：Conventional Commits
 
@@ -307,124 +257,6 @@ npm run test
 
 ### 部署
 ```bash
-# 使用Docker Compose
+# 使用 Docker Compose
 docker-compose up -d
 ```
-
-## 贡献指南
-
-1. Fork 项目
-2. 创建功能分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 创建 Pull Request
-
-## 许可证
-
-本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
-
-## 联系我们
-
-- 项目主页：[GitHub](https://github.com/your-repo/AuroraDocs)
-- 问题反馈：[Issues](https://github.com/your-repo/AuroraDocs/issues)
-- 邮箱：contact@auroradocs.com
-
-### 部署说明
-后端服务建议部署在远程GPU服务器（如AutoDL、校园GPU集群），前端客户端可在Windows本地运行或通过Web浏览器访问。
-
-### 安装步骤
-
-1. **克隆项目**
-   ```bash
-   git clone https://github.com/your-repo/AuroraDocs.git
-   cd AuroraDocs
-   ```
-
-2. **后端设置**
-   ```bash
-   cd backend
-   python -m venv venv
-   source venv/bin/activate  # Windows: venv\Scripts\activate
-   pip install -r requirements.txt
-   ```
-
-3. **前端设置**
-   ```bash
-   cd frontend
-   npm install
-   ```
-
-4. **桌面应用打包**
-   ```bash
-   cd frontend
-   npm run electron:build
-   ```
-   打包产物会生成在 `frontend/dist_electron` 目录下，可用于 Windows 安装包或 ZIP 下载。
-
-5. **环境配置**
-   ```bash
-   cd backend
-   copy ..\.env.example .env
-   # 编辑 backend\.env 文件，配置数据库、Redis、MinIO 等信息
-
-   cd ..\frontend
-   copy .env.example .env
-   # 配置 VITE_API_BASE_URL 为后端地址
-   ```
-
-5. **启动服务**
-   ```bash
-   # 启动后端 API
-   cd backend
-   uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-
-   # 启动 Celery worker (另开终端)
-   cd backend
-   celery -A app.tasks.celery_app.celery_app worker --loglevel=info
-
-   # 启动前端 (另开终端)
-   cd frontend
-   npm run dev
-   ```
-
-## 开发指南
-
-### 代码规范
-- 后端：遵循PEP 8，类型注解
-- 前端：ESLint + Prettier，Vue 3 Composition API
-- 提交：Conventional Commits
-
-### 测试
-```bash
-# 后端测试
-cd backend
-pytest
-
-# 前端测试
-cd frontend
-npm run test
-```
-
-### 部署
-```bash
-# 使用Docker Compose
-docker-compose up -d
-```
-
-## 贡献指南
-
-1. Fork 项目
-2. 创建功能分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 创建 Pull Request
-
-## 许可证
-
-本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
-
-## 联系我们
-
-- 项目主页：[GitHub](https://github.com/your-repo/AuroraDocs)
-- 问题反馈：[Issues](https://github.com/your-repo/AuroraDocs/issues)
-- 邮箱：contact@auroradocs.com
