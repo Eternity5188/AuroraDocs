@@ -49,6 +49,10 @@ This project demonstrates how powerful ML systems can be wrapped in a seamless, 
 
 ## 🚀 Quick Start
 
+> **Platform Note:** Choose the correct startup command for your OS:
+> - **Linux / macOS**: Use `bash run.sh`
+> - **Windows**: Use `run.bat`
+
 ### 1️⃣ Clone the Repository
 
 ```bash
@@ -61,7 +65,7 @@ cd AuroraDocs
 ```bash
 cd backend
 
-# Linux/macOS
+# Linux / macOS
 bash run.sh
 
 # Windows
@@ -76,7 +80,7 @@ run.bat
 ```bash
 cd frontend
 
-# Linux/macOS
+# Linux / macOS
 bash run.sh
 
 # Windows

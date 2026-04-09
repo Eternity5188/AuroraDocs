@@ -7,6 +7,12 @@ set -e
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "$SCRIPT_DIR"
 
+echo ""
+echo "=================================================="
+echo "  AuroraDocs Backend - Auto Setup & Start"
+echo "=================================================="
+echo ""
+
 # ============= 自动检测和配置 =============
 
 # 找 Python
@@ -19,21 +25,26 @@ else
     exit 1
 fi
 
+echo "✓ Python detected: $($PYTHON --version)"
+
 # 创建虚拟环境
 if [ ! -d "venv" ]; then
+    echo "✓ Creating virtual environment..."
     $PYTHON -m venv venv
 fi
 source venv/bin/activate
 
 # 自动安装依赖（静默模式）
+echo "✓ Installing dependencies..."
 pip install -q --upgrade pip 2>/dev/null || true
 pip install -q -r requirements.txt 2>/dev/null || {
-    echo "⚠️ Dependency installation failed, retrying..."
+    echo "⚠️  Dependency installation failed, retrying..."
     pip install -r requirements.txt
 }
 
 # 自动创建 .env（如果不存在）
 if [ ! -f ".env" ]; then
+    echo "✓ Generating .env configuration..."
     cat > .env << 'EOF'
 DATABASE_URL=sqlite:///./auroradocs.db
 REDIS_URL=redis://localhost:6379/0
@@ -58,9 +69,13 @@ mkdir -p models data/samples
 
 # ============= 启动 =============
 echo ""
-echo "🚀 启动 AuroraDocs 后端..."
-echo "📍 访问 http://localhost:8000/docs"
-echo "❌ 按 Ctrl+C 停止"
+echo "=================================================="
+echo "  Backend ready! Starting server..."
+echo "=================================================="
+echo ""
+echo "📍 Frontend: http://localhost:5173"
+echo "📖 API Docs: http://localhost:8000/docs"
+echo "⏹  Press Ctrl+C to stop"
 echo ""
 
 python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
