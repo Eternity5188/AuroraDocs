@@ -1,67 +1,197 @@
-# AuroraDocs 🌟
+# AuroraDocs
 
-> 智能文档生成平台 - 基于 LoRA 微调大模型
+<div align="center">
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
-[![Node.js 16+](https://img.shields.io/badge/node.js-16+-green.svg)](https://nodejs.org/)
-[![Vue 3](https://img.shields.io/badge/vue-3-green.svg)](https://vuejs.org/)
-[![Docker](https://img.shields.io/badge/docker-%230db7ed.svg)](https://www.docker.com/)
+![License](https://img.shields.io/badge/license-MIT-brightgreen.svg)
+![Python](https://img.shields.io/badge/python-3.9%2B-blue.svg)
+![Node.js](https://img.shields.io/badge/node.js-16%2B-brightgreen.svg)
+![Status](https://img.shields.io/badge/status-active-success.svg)
 
-## ✨ 功能
+**Intelligence-Driven Document Generation Platform**  
+*Powered by LoRA-Fine-tuned Large Language Models*
 
-- 🧠 **智能文档生成** - 支持文本、代码、流程图等多模态内容
-- 🎯 **个性化训练** - 基于用户样例的 LoRA 微调
-- ☁️ **云边协同** - 远程 GPU 后端 + 轻量级客户端
-- 📝 **协作编辑** - 实时协作、版本控制、模板库
-- 🛡️ **企业安全** - 本地存储、端到端加密
+[Features](#-features) • [Quick Start](#-quick-start) • [Requirements](#-requirements) • [License](#-license)
 
-## 🚀 快速开始
+</div>
 
-### 前置要求
-- **前端**：Windows/Mac/Linux，4GB 内存
-- **后端**：Linux，Docker，NVIDIA GPU（可选）
+---
 
-### Docker 部署
+## 📖 About
+
+**AuroraDocs** is an intelligent document generation platform that combines cutting-edge AI with user-friendly design. Instead of wrestling with complex deployment steps, simply run a startup script and start generating high-quality documents.
+
+This project demonstrates how powerful ML systems can be wrapped in a seamless, production-ready package that works out of the box.
+
+---
+
+## ✨ Features
+
+- 🧠 **AI-Powered Generation** – Generate documents, code, and diagrams using fine-tuned LLMs
+- 🎯 **Personalized Training** – LoRA fine-tuning on your own examples  
+- 🚀 **Zero-Config Setup** – Clone, run, done. No configuration needed
+- 🔄 **Real-time Collaboration** – Built-in version control and templates
+- 🛡️ **Privacy First** – Local storage, edge deployment ready
+- 📦 **Production Ready** – Enterprise-grade reliability out of the box
+
+---
+
+## 📋 Requirements
+
+| Component | Requirement | Optional |
+|-----------|-------------|----------|
+| **Python** | 3.9+ | ❌ |
+| **Node.js** | 16+ | ❌ |
+| **PostgreSQL** | 12+ | ✅ (SQLite default) |
+| **Redis** | 6+ | ✅ (Task queue) |
+| **GPU** | NVIDIA CUDA 11.8+ | ✅ (Model training) |
+
+---
+
+## 🚀 Quick Start
+
+### 1️⃣ Clone the Repository
 
 ```bash
 git clone https://github.com/Eternity5188/AuroraDocs.git
 cd AuroraDocs
-
-cp .env.example .env
-docker-compose up -d
-
-# 验证：访问 http://localhost:8000/docs
 ```
 
-### 前端配置
+### 2️⃣ Start Backend
+
+```bash
+cd backend
+
+# Linux/macOS
+bash run.sh
+
+# Windows
+run.bat
+```
+
+✅ Backend runs on `http://localhost:8000`  
+📖 API Docs: `http://localhost:8000/docs`
+
+### 3️⃣ Start Frontend (New Terminal)
 
 ```bash
 cd frontend
-npm install
-npm run dev
 
-# 访问 http://localhost:5173
+# Linux/macOS
+bash run.sh
+
+# Windows
+run.bat
 ```
 
-## 📁 结构
+✅ Frontend runs on `http://localhost:5173`
+
+---
+
+## 🎯 How It Works
+
+The scripts automate everything:
 
 ```
-├── backend/       # FastAPI 后端 + AI 模型
-├── frontend/      # Vue 3 + Electron 客户端
-├── docker-compose.yml
-└── .env.example
+run.sh/run.bat
+    ↓
+├─ Detect Python/Node.js
+├─ Create virtual environment
+├─ Install dependencies silently
+├─ Generate .env automatically
+├─ Create data directories
+└─ Start service
 ```
 
-## 🛠️ 技术栈
+**Users don't need to know about:**
+- Environment variables
+- Virtual environments  
+- Dependency management
+- Configuration files
 
-**后端**：FastAPI · PostgreSQL · Redis · Celery · vLLM · LoRA  
-**前端**：Vue 3 · TypeScript · Electron · Element Plus
+---
 
-## 📄 License
+## 🏗️ Architecture
 
-MIT License - 详见 [LICENSE](./LICENSE)
+```
+AuroraDocs/
+├── backend/              # FastAPI + AI Engine
+│   ├── app/
+│   │   ├── api/         # REST endpoints
+│   │   ├── core/        # Business logic
+│   │   ├── models/      # Database schemas
+│   │   └── services/    # AI services
+│   ├── run.sh / run.bat # One-click startup
+│   └── requirements.txt
+│
+├── frontend/             # Vue 3 + Electron
+│   ├── src/
+│   │   ├── api/         # API client
+│   │   ├── components/  # UI components
+│   │   ├── stores/      # State management
+│   │   └── views/       # Pages
+│   ├── run.sh / run.bat # One-click startup
+│   └── package.json
+│
+└── README.md            # This file
+```
 
-## 🐛 问题反馈
+---
 
-[提交 Issue](https://github.com/Eternity5188/AuroraDocs/issues)
+## 🛠️ Technology Stack
+
+| Layer | Technologies |
+|-------|--------------|
+| **Backend** | FastAPI, SQLAlchemy, Celery, Uvicorn |
+| **AI/ML** | PyTorch, Transformers, LoRA, vLLM |
+| **Frontend** | Vue 3, TypeScript, Vite, Electron |
+| **Database** | PostgreSQL, SQLite, Redis |
+| **Storage** | MinIO, Local filesystem |
+
+---
+
+## 📊 Project Status
+
+- ✅ Core features implemented
+- ✅ Production-ready
+- ✅ Zero-config deployment
+- 🚧 Web-based UI improvements in progress
+- 📋 Enterprise features coming soon
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+For substantial changes, please open an issue first to discuss what you would like to change.
+
+---
+
+## 📝 License
+
+This project is licensed under the **MIT License** - see the [LICENSE](./LICENSE) file for details.
+
+---
+
+## 👤 Author
+
+**AuroraDocs** is maintained by the community.
+
+For questions, open an issue on [GitHub](https://github.com/Eternity5188/AuroraDocs/issues).
+
+---
+
+## 🎓 Learn More
+
+- [FastAPI Documentation](https://fastapi.tiangolo.com/)
+- [Vue 3 Guide](https://vuejs.org/)
+- [LoRA Paper](https://arxiv.org/abs/2106.09685)
+- [vLLM Documentation](https://docs.vllm.ai/)
+
+---
+
+<div align="center">
+
+Made with ❤️ by the AuroraDocs community
+
+</div>
