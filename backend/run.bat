@@ -107,7 +107,7 @@ echo.
 REM ============= 检查环境是否完整安装了包 =============
 
 REM 检查关键包是否已安装
-python -c "import torch, transformers, fastapi" >nul 2>&1
+python -c "import torch, transformers, fastapi, pydantic_settings" >nul 2>&1
 if !errorlevel! equ 0 (
     echo [+] All required packages already installed in environment
     echo [+] Skipping package installation...

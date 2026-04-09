@@ -116,7 +116,7 @@ echo ""
 # ============= 检查环境是否完整安装了包 =============
 
 # 检查关键包是否已安装
-if python -c "import torch, transformers, fastapi" 2>/dev/null; then
+if python -c "import torch, transformers, fastapi, pydantic_settings" 2>/dev/null; then
     echo "✓ All required packages already installed in environment"
     echo "✓ Skipping package installation..."
 else
