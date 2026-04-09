@@ -252,59 +252,6 @@ def check_version_match(installed, required):
 
 def main():
     print_header("AuroraDocs - Dependency Checker & Fixer")
-            # 跳过注释和空行
-            if not line or line.startswith('#'):
-                continue
-            
-            # 跳过 -r 引用（直接处理被引用的文件）
-            if line.startswith('-r'):
-                continue
-            
-            # 解析包名和版本
-            # 格式: package==version, package>=version, package[extras]==version
-            match = re.match(r'^([a-zA-Z0-9_-]+)(?:\[.*?\])?(.*?)$', line)
-            if match:
-                pkg_name = match.group(1)
-                version_spec = match.group(2).strip() if match.group(2) else ""
-                packages[pkg_name] = version_spec
-    
-    return packages
-
-def get_installed_version(package_name):
-    """获取已安装的包版本，如果未安装返回 None"""
-    try:
-        dist = pkg_resources.get_distribution(package_name)
-        return dist.version
-    except pkg_resources.DistributionNotFound:
-        return None
-
-def normalize_package_name(name):
-    """规范化包名（处理 underscore/dash）"""
-    return name.lower().replace('_', '-')
-
-def check_version_match(installed, required):
-    """检查版本是否匹配"""
-    if not required:
-        return True  # 没有版本要求
-    
-    # 解析版本说明符
-    if '==' in required:
-        required_ver = required.split('==')[1].strip()
-        return installed == required_ver
-    elif '>=' in required:
-        required_ver = required.split('>=')[1].strip()
-        return version.parse(installed) >= version.parse(required_ver)
-    elif '<=' in required:
-        required_ver = required.split('<=')[1].strip()
-        return version.parse(installed) <= version.parse(required_ver)
-    elif '!=' in required:
-        required_ver = required.split('!=')[1].strip()
-        return version.parse(installed) != version.parse(required_ver)
-    
-    return True
-
-def main():
-    print_header("AuroraDocs - Dependency Checker & Fixer")
     
     # 获取脚本所在目录
     script_dir = os.path.dirname(os.path.abspath(__file__))
