@@ -1,20 +1,13 @@
-# AuroraDocs ML/GPU Dependencies (Optional)
-# 用于 AI 模型推理和训练 - 需要编译，可能安装缓慢
+# AuroraDocs Standard ML Mode
+# 包含 AI 生成的必要库
 
-# 包含 core 依赖
 -r requirements-core.txt
 
-# ML/AI 库
+# 必须的 AI/ML 库
 transformers==4.35.2
 torch==2.2.0
 peft==0.6.2
 
-# 注意：以下库在某些环境中可能安装失败
-# 如果出现问题，可以先不安装这些，后续需要时再单独安装
-
-# deepspeed==0.12.3
-# vllm==0.3.3
-# pymilvus==2.3.4
-
 # Dev 依赖
 pytest==7.4.3
+
