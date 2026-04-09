@@ -2,7 +2,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.engine import make_url
 from sqlalchemy.orm import sessionmaker
 from app.core.config import settings
-from app.models.base import Base
+from ..models.base import Base
 
 engine = create_engine(settings.DATABASE_URL, future=True, echo=False)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
@@ -40,6 +40,6 @@ def init_db():
     create_database_if_not_exists()
 
     # Import all models so that they are registered on the metadata.
-    from app.models import task  # noqa: F401
+    from ..models import task  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
