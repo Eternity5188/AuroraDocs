@@ -1,8 +1,10 @@
 @echo off
 REM AuroraDocs 依赖检查和修复脚本 (Windows)
 REM 功能: 检查所有依赖，自动安装缺失包，升级版本不匹配的包
+REM 智能特性: 自动发现所有已有虚拟环境并让用户选择
 
 setlocal enabledelayedexpansion
+cd /d "%~dp0"
 
 echo.
 echo ==================================================
@@ -10,40 +12,129 @@ echo   AuroraDocs - Dependency Checker ^& Fixer
 echo ==================================================
 echo.
 
-REM ============= 激活环境 =============
+REM ============= 环境检测 =============
 
-echo [1/5] Activating Python environment...
+echo [0/5] Detecting Python environments...
+echo.
 
-REM 检查 Conda 环境
+set "env_count=0"
+set "preferred_idx=-1"
+
+REM 检测 Conda 环境
 where conda >nul 2>&1
 if %errorlevel% equ 0 (
-    echo [+] Found Conda
+    echo ^✓ Conda detected
     
-    REM 查找 auroradocs 环境
-    for /f "tokens=1" %%i in ('conda env list ^| find "auroradocs"') do set CONDA_ENV=%%i
-    
-    if "!CONDA_ENV!"=="" (
-        echo [!] Conda environment 'auroradocs' not found
-        echo Creating Conda environment...
-        call conda create -y -n auroradocs python=3.11
-        echo Please run this script again after environment creation
-        pause
-        exit /b 0
+    REM 获取 conda 环境列表
+    for /f "tokens=1" %%A in ('conda env list ^| findstr /v "^#"') do (
+        if not "%%A"=="" if not "%%A"=="name" (
+            set /a env_count+=1
+            set "env_name_!env_count!=%%A (conda)"
+            
+            REM 获取环境路径
+            for /f "tokens=*" %%P in ('conda run -n %%A python -c "import sys; print(sys.prefix)" 2^>nul') do (
+                set "env_path_!env_count!=%%P"
+            )
+            set "env_type_!env_count!=conda"
+            
+            REM 优先选择 auroradocs
+            if "%%A"=="auroradocs" set "preferred_idx=!env_count!"
+        )
     )
-    
-    echo [+] Using Conda environment: auroradocs
-    call conda activate auroradocs
-) else if exist "venv\Scripts\activate.bat" (
-    call venv\Scripts\activate.bat
-    echo [+] Using venv environment
-) else (
-    echo [-] No Python environment found
-    echo Run: run.bat ^(to setup environment first^)
+)
+
+REM 检测本地 venv
+if exist "venv\Scripts\activate.bat" (
+    set /a env_count+=1
+    set "env_name_!env_count!=venv (local)"
+    set "env_path_!env_count!=%CD%\venv"
+    set "env_type_!env_count!=venv"
+)
+
+if %env_count% equ 0 (
+    echo [ERROR] No Python environments found!
+    echo.
+    echo Please create an environment first:
+    echo   conda create -n auroradocs python=3.11
+    echo   OR
+    echo   python -m venv venv
     pause
     exit /b 1
 )
 
-python --version
+echo ^✓ Found %env_count% environment(s):
+echo.
+
+REM 显示环境列表
+for /l %%i in (1,1,%env_count%) do (
+    echo   %%i !env_name_%%i!
+    echo       Path: !env_path_%%i!
+    
+    REM 获取 Python 版本
+    if !env_type_%%i! equ conda (
+        set "python_exe=!env_path_%%i!\Scripts\python.exe"
+    ) else (
+        set "python_exe=!env_path_%%i!\Scripts\python.exe"
+    )
+    
+    if exist "!python_exe!" (
+        for /f "tokens=*" %%V in ('^"!python_exe!" --version 2^>^&1') do (
+            echo       Python: %%V
+        )
+    )
+    echo.
+)
+
+REM 自动选择（仅单个环境时）
+if %env_count% equ 1 (
+    set "selected_idx=1"
+    echo ^✓ Auto-selected: !env_name_1!
+) else (
+    REM 多个环境时让用户选择
+    :choose_env
+    if %preferred_idx% geq 0 (
+        set /p choice="Choose environment number (default: %preferred_idx%): "
+        if "!choice!"=="" set "choice=%preferred_idx%"
+    ) else (
+        set /p choice="Choose environment number: "
+    )
+    
+    REM 验证选择
+    if !choice! geq 1 if !choice! leq %env_count% (
+        set "selected_idx=!choice!"
+        echo ^✓ Selected: !env_name_%selected_idx%!
+    ) else (
+        echo [ERROR] Invalid choice. Please try again.
+        goto choose_env
+    )
+)
+
+echo.
+set "SELECTED_ENV_PATH=!env_path_%selected_idx%!"
+set "SELECTED_ENV_TYPE=!env_type_%selected_idx%!"
+set "PIP_EXE=!SELECTED_ENV_PATH!\Scripts\pip.exe"
+
+if not exist "!PIP_EXE!" (
+    echo [ERROR] pip not found at !PIP_EXE!
+    pause
+    exit /b 1
+)
+
+echo [1/5] Activating environment...
+echo ^✓ Using pip: !PIP_EXE!
+echo.
+
+REM 激活对应的环境以便查看版本
+if "!SELECTED_ENV_TYPE!"=="conda" (
+    for /f "tokens=1" %%I in ("!SELECTED_ENV_PATH!") do (
+        set "env_name=%%~nxI"
+        call conda activate !env_name! >nul 2>&1
+    )
+) else if exist "!SELECTED_ENV_PATH!\Scripts\activate.bat" (
+    call "!SELECTED_ENV_PATH!\Scripts\activate.bat" >nul 2>&1
+)
+
+"!SELECTED_ENV_PATH!\Scripts\python.exe" --version >nul 2>&1
 echo.
 
 REM ============= 检查依赖 =============

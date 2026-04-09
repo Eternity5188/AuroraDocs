@@ -2,6 +2,7 @@
 
 # AuroraDocs 依赖检查和修复脚本
 # 功能: 检查所有依赖，自动安装缺失包，升级版本不匹配的包
+# 智能特性: 自动发现所有已有虚拟环境并让用户选择
 
 set -e
 
@@ -19,11 +20,117 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
-# ============= 激活环境 =============
+# ============= 环境检测函数 =============
 
-echo -e "${BLUE}[1/5]${NC} Activating Python environment..."
+detect_environments() {
+    echo -e "${BLUE}[0/5]${NC} Detecting Python environments..."
+    echo ""
+    
+    declare -a env_names
+    declare -a env_paths
+    declare -a env_types
+    local count=0
+    
+    # 检测 Conda 环境
+    if command -v conda &> /dev/null; then
+        echo -e "${GREEN}✓${NC} Conda detected"
+        
+        # 获取所有 conda 环境
+        while IFS= read -r line; do
+            if [[ ! "$line" =~ ^# ]] && [[ -n "$line" ]]; then
+                env_name=$(echo "$line" | awk '{print $1}')
+                env_path=$(echo "$line" | awk '{print $NF}')
+                
+                if [ -d "$env_path" ]; then
+                    env_names[$count]="$env_name (conda)"
+                    env_paths[$count]="$env_path"
+                    env_types[$count]="conda"
+                    ((count++))
+                fi
+            fi
+        done < <(conda env list)
+    fi
+    
+    # 检测本地 venv
+    if [ -d "venv" ] && [ -f "venv/bin/activate" ]; then
+        env_names[$count]="venv (local)"
+        env_paths[$count]="$(pwd)/venv"
+        env_types[$count]="venv"
+        ((count++))
+    fi
+    
+    if [ $count -eq 0 ]; then
+        echo -e "${RED}❌${NC} No Python environments found!"
+        echo ""
+        echo "Please create an environment first:"
+        echo "  conda create -n auroradocs python=3.11"
+        echo "  OR"
+        echo "  python -m venv venv"
+        exit 1
+    fi
+    
+    echo -e "${GREEN}✓${NC} Found $count environment(s):"
+    echo ""
+    
+    # 显示环境列表
+    for i in "${!env_names[@]}"; do
+        echo "  ${CYAN}$((i+1))${NC} ${env_names[$i]}"
+        echo "      Path: ${env_paths[$i]}"
+        
+        # 获取 Python 版本
+        if [ "${env_types[$i]}" = "conda" ]; then
+            python_exe="${env_paths[$i]}/bin/python"
+        else
+            python_exe="${env_paths[$i]}/bin/python"
+        fi
+        
+        if [ -f "$python_exe" ]; then
+            py_version=$("$python_exe" --version 2>&1 || echo "unknown")
+            echo "      Python: $py_version"
+        fi
+        echo ""
+    done
+    
+    # 单环境自动选择
+    if [ $count -eq 1 ]; then
+        echo -e "${GREEN}✓${NC} Auto-selected: ${env_names[0]}"
+        selected_idx=0
+    else
+        # 优先选择 auroradocs 环境
+        preferred_idx=""
+        for i in "${!env_names[@]}"; do
+            if [[ "${env_names[$i]}" =~ auroradocs ]]; then
+                preferred_idx=$i
+                break
+            fi
+        done
+        
+        # 让用户选择
+        while true; do
+            if [ -n "$preferred_idx" ]; then
+                read -p "Choose environment number (default: $((preferred_idx+1))): " choice
+                [ -z "$choice" ] && choice=$((preferred_idx+1))
+            else
+                read -p "Choose environment number: " choice
+            fi
+            
+            if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 1 ] && [ "$choice" -le $count ]; then
+                selected_idx=$((choice-1))
+                echo -e "${GREEN}✓${NC} Selected: ${env_names[$selected_idx]}"
+                break
+            else
+                echo -e "${RED}❌${NC} Invalid choice. Please try again."
+            fi
+        done
+    fi
+    
+    echo ""
+    SELECTED_ENV_PATH="${env_paths[$selected_idx]}"
+    SELECTED_ENV_TYPE="${env_types[$selected_idx]}"
+}
 
 # 检测 Conda 或 venv
 if command -v conda &> /dev/null; then

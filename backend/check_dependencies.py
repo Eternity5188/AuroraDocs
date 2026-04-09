@@ -4,12 +4,18 @@
 AuroraDocs 依赖检查和修复工具
 支持: Linux, macOS, Windows
 功能: 检查所有依赖，自动安装缺失包，升级版本不匹配的包
+
+智能环境检测:
+- 自动发现 Conda 中的所有环境
+- 自动检测本地 venv
+- 用户友好的环境选择菜单
 """
 
 import subprocess
 import sys
 import os
 import re
+import json
 from pathlib import Path
 from packaging import version
 import pkg_resources
@@ -20,6 +26,7 @@ class Color:
     GREEN = '\033[92m'
     YELLOW = '\033[93m'
     BLUE = '\033[94m'
+    CYAN = '\033[96m'
     END = '\033[0m'
     
     @staticmethod
@@ -46,6 +53,140 @@ def print_warning(msg):
 
 def print_info(msg):
     print(f"{Color.colored('[info]', Color.BLUE)} {msg}")
+
+def print_menu_item(num, text):
+    print(f"  {Color.colored(str(num), Color.CYAN)} {text}")
+
+# ============= 环境检测 =============
+
+def get_conda_environments():
+    """获取所有 Conda 环境"""
+    environments = {}
+    
+    try:
+        result = subprocess.run(
+            ["conda", "env", "list", "--json"],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        
+        if result.returncode == 0:
+            data = json.loads(result.stdout)
+            for env_path in data.get("envs", []):
+                env_name = os.path.basename(env_path)
+                environments[env_name] = {
+                    "path": env_path,
+                    "type": "conda",
+                    "python": get_python_version(env_path)
+                }
+    except Exception as e:
+        pass
+    
+    return environments
+
+def get_venv_environments():
+    """检测本地 venv 环境"""
+    environments = {}
+    
+    # 检查本地 venv
+    venv_path = os.path.join(os.getcwd(), "venv")
+    if os.path.exists(venv_path) and os.path.isdir(venv_path):
+        python_path = os.path.join(venv_path, "bin", "python") if os.name != "nt" else os.path.join(venv_path, "Scripts", "python.exe")
+        environments["venv (local)"] = {
+            "path": venv_path,
+            "type": "venv",
+            "python": get_python_version(venv_path)
+        }
+    
+    return environments
+
+def get_python_version(env_path):
+    """获取环境中的 Python 版本"""
+    try:
+        if os.name == "nt":  # Windows
+            python_exe = os.path.join(env_path, "Scripts", "python.exe")
+        else:  # Linux/Mac
+            python_exe = os.path.join(env_path, "bin", "python")
+        
+        if os.path.exists(python_exe):
+            result = subprocess.run(
+                [python_exe, "--version"],
+                capture_output=True,
+                text=True,
+                timeout=2
+            )
+            return result.stdout.strip() or "unknown"
+    except:
+        pass
+    
+    return "unknown"
+
+def detect_and_choose_environment():
+    """检测并让用户选择环境"""
+    print_info("Detecting Python environments...")
+    
+    all_envs = {}
+    
+    # 获取 Conda 环境
+    conda_envs = get_conda_environments()
+    all_envs.update(conda_envs)
+    
+    # 获取 venv 环境
+    venv_envs = get_venv_environments()
+    all_envs.update(venv_envs)
+    
+    if not all_envs:
+        print_error("No Python environments found!")
+        print("Please create an environment first:")
+        print("  conda create -n auroradocs python=3.11")
+        print("  OR")
+        print("  python -m venv venv")
+        return None
+    
+    print()
+    print_success(f"Found {len(all_envs)} environment(s):")
+    print()
+    
+    # 显示环境列表
+    env_list = list(all_envs.items())
+    for i, (env_name, env_info) in enumerate(env_list, 1):
+        python_ver = env_info.get("python", "unknown")
+        print_menu_item(i, f"{env_name}")
+        print(f"      Path: {env_info['path']}")
+        print(f"      Python: {python_ver}")
+        print()
+    
+    # 优先选择 auroradocs 环境
+    preferred_index = None
+    for i, (env_name, _) in enumerate(env_list):
+        if "auroradocs" in env_name.lower():
+            preferred_index = i + 1
+            break
+    
+    # 单个环境时自动选择
+    if len(env_list) == 1:
+        print_success(f"Auto-selected: {env_list[0][0]}")
+        return env_list[0]
+    
+    # 多个环境时让用户选择
+    while True:
+        default_choice = f" (default: {preferred_index})" if preferred_index else ""
+        choice = input(f"Choose environment number{default_choice}: ").strip()
+        
+        if not choice and preferred_index:
+            choice = str(preferred_index)
+        
+        try:
+            choice_idx = int(choice) - 1
+            if 0 <= choice_idx < len(env_list):
+                selected_env = env_list[choice_idx]
+                print_success(f"Selected: {selected_env[0]}")
+                return selected_env
+            else:
+                print_error("Invalid choice. Please try again.")
+        except ValueError:
+            print_error("Please enter a valid number.")
 
 def parse_requirements_file(file_path):
     """解析需求文件并返回包和版本的字典"""
@@ -111,18 +252,102 @@ def check_version_match(installed, required):
 
 def main():
     print_header("AuroraDocs - Dependency Checker & Fixer")
+            # 跳过注释和空行
+            if not line or line.startswith('#'):
+                continue
+            
+            # 跳过 -r 引用（直接处理被引用的文件）
+            if line.startswith('-r'):
+                continue
+            
+            # 解析包名和版本
+            # 格式: package==version, package>=version, package[extras]==version
+            match = re.match(r'^([a-zA-Z0-9_-]+)(?:\[.*?\])?(.*?)$', line)
+            if match:
+                pkg_name = match.group(1)
+                version_spec = match.group(2).strip() if match.group(2) else ""
+                packages[pkg_name] = version_spec
+    
+    return packages
+
+def get_installed_version(package_name):
+    """获取已安装的包版本，如果未安装返回 None"""
+    try:
+        dist = pkg_resources.get_distribution(package_name)
+        return dist.version
+    except pkg_resources.DistributionNotFound:
+        return None
+
+def normalize_package_name(name):
+    """规范化包名（处理 underscore/dash）"""
+    return name.lower().replace('_', '-')
+
+def check_version_match(installed, required):
+    """检查版本是否匹配"""
+    if not required:
+        return True  # 没有版本要求
+    
+    # 解析版本说明符
+    if '==' in required:
+        required_ver = required.split('==')[1].strip()
+        return installed == required_ver
+    elif '>=' in required:
+        required_ver = required.split('>=')[1].strip()
+        return version.parse(installed) >= version.parse(required_ver)
+    elif '<=' in required:
+        required_ver = required.split('<=')[1].strip()
+        return version.parse(installed) <= version.parse(required_ver)
+    elif '!=' in required:
+        required_ver = required.split('!=')[1].strip()
+        return version.parse(installed) != version.parse(required_ver)
+    
+    return True
+
+def main():
+    print_header("AuroraDocs - Dependency Checker & Fixer")
     
     # 获取脚本所在目录
     script_dir = os.path.dirname(os.path.abspath(__file__))
     os.chdir(script_dir)
     
+    # ============= 步骤 0: 环境检测和选择 =============
+    print_info("[0/5] Detecting and selecting Python environment...")
+    print()
+    
+    selected_env = detect_and_choose_environment()
+    if not selected_env:
+        return 1
+    
+    env_name, env_info = selected_env
+    env_path = env_info['path']
+    env_type = env_info['type']
+    
+    print()
+    
     # ============= 步骤 1: 激活环境 =============
-    print_info("Checking Python environment...")
-    print_success(f"Python {sys.version.split()[0]}")
+    print_info("[1/5] Activating environment...")
+    
+    # 在目标环境中运行 pip 命令
+    if env_type == "conda":
+        if os.name == "nt":  # Windows
+            pip_exe = os.path.join(env_path, "Scripts", "pip.exe")
+        else:  # Linux/Mac
+            pip_exe = os.path.join(env_path, "bin", "pip")
+    else:  # venv
+        if os.name == "nt":  # Windows
+            pip_exe = os.path.join(env_path, "Scripts", "pip.exe")
+        else:  # Linux/Mac
+            pip_exe = os.path.join(env_path, "bin", "pip")
+    
+    if not os.path.exists(pip_exe):
+        print_error(f"pip not found at {pip_exe}")
+        return 1
+    
+    print_success(f"Using pip: {pip_exe}")
     print()
     
     # ============= 步骤 2: 解析需求文件 =============
-    print_info("Analyzing requirements files...")
+    print_info("[2/5] Analyzing requirements files...")
     
     all_packages = {}
     
@@ -131,7 +356,7 @@ def main():
     all_packages.update(core_packages)
     print_success(f"requirements-core.txt: {len(core_packages)} packages")
     
-    # 解析 requirements-ml.txt（会覆盖 core 中的同名包，但通常不会有重复）
+    # 解析 requirements-ml.txt
     ml_packages = parse_requirements_file("requirements-ml.txt")
     all_packages.update(ml_packages)
     print_success(f"requirements-ml.txt: {len(ml_packages)} additional packages")
@@ -145,7 +370,7 @@ def main():
     print()
     
     # ============= 步骤 3: 检查已安装的包 =============
-    print_info("Checking installed packages...")
+    print_info("[3/5] Checking installed packages...")
     print()
     
     good_packages = {}
@@ -184,7 +409,7 @@ def main():
     
     # ============= 步骤 4: 自动修复 =============
     if missing_packages or wrong_version_packages:
-        print_info("Fixing dependencies...")
+        print_info("[4/5] Fixing dependencies...")
         print()
         
         # 安装缺失的包
@@ -195,7 +420,7 @@ def main():
                 print(f"  → Installing {pkg_spec}...", end=" ", flush=True)
                 
                 result = subprocess.run(
-                    [sys.executable, "-m", "pip", "install", "--prefer-binary", pkg_spec, "-q"],
+                    [pip_exe, "install", "--prefer-binary", pkg_spec, "-q"],
                     capture_output=True
                 )
                 
@@ -213,7 +438,7 @@ def main():
                 print(f"  → Upgrading {pkg_spec}...", end=" ", flush=True)
                 
                 result = subprocess.run(
-                    [sys.executable, "-m", "pip", "install", "--prefer-binary", pkg_spec, "--upgrade", "-q"],
+                    [pip_exe, "install", "--prefer-binary", pkg_spec, "--upgrade", "-q"],
                     capture_output=True
                 )
                 
@@ -224,7 +449,7 @@ def main():
             print()
         
         # ============= 步骤 5: 验证 =============
-        print_info("Verifying installation...")
+        print_info("[5/5] Verifying installation...")
         print()
         
         all_fixed = True

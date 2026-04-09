@@ -1,5 +1,7 @@
 # AuroraDocs 依赖检查工具使用指南
 
+> **新功能**: 脚本现在可以自动发现和管理所有已有的 Conda + venv 环境！
+
 ## 快速开始
 
 ### Linux / macOS
@@ -20,14 +22,67 @@ check_dependencies.bat
 python3 check_dependencies.py
 ```
 
+---
+
+## ✨ 新功能: 智能环境检测
+
+所有脚本现在都能**自动发现并让用户管理 Conda 和 venv 环境**！
+
+### 工作流程
+
+当你运行脚本时：
+
+1. **自动发现所有已有的环境**
+   - 列出所有 Conda 环境（名称、路径、Python 版本）
+   - 检测本地 `venv` 目录
+
+2. **智能选择环境**
+   - ✅ 单一环境：自动使用
+   - 🎯 多个环境：优先选择 `auroradocs`（如果存在）
+   - 📋 显示菜单：让用户选择其他环境
+
+3. **在目标环境中执行检查和修复**
+   - 直接在选定的环境中安装/升级包
+   - 无需手动激活环境
+
+### 实际对话示例
+
+```
+[0/5] Detecting Python environments...
+
+✓ Found 2 environment(s):
+
+  1 auroradocs (conda)
+      Path: /home/user/miniforge3/envs/auroradocs
+      Python: Python 3.11.8
+
+  2 venv (local)
+      Path: /home/user/project/backend/venv
+      Python: Python 3.10.12
+
+✓ Auto-selected: auroradocs (conda)
+
+[1/5] Activating environment...
+✓ Using pip: /home/user/miniforge3/envs/auroradocs/bin/pip
+```
+
+---
+
 ## 功能说明
 
 这个工具会自动执行以下操作：
 
-### 1️⃣ 检查 Python 环境
-- ✅ 检测 Conda 或 venv 环境
-- ✅ 如果环境不存在，会引导创建
-- ✅ 确保在正确的虚拟环境中运行
+### 0️⃣ 环境检测和选择（新功能）
+- ✅ 自动发现所有 Conda 环境
+- ✅ 自动检测本地 venv
+- ✅ 显示每个环境的 Python 版本
+- ✅ 优先选择 `auroradocs` 环境
+- ✅ 单环境时自动选择，多环境时提示用户选择
+
+### 1️⃣ 激活环境
+- ✅ 在选定的环境中获取 pip 路径
+- ✅ 验证环境完整性
+- ✅ 显示使用的 pip 版本
 
 ### 2️⃣ 解析需求文件
 - ✅ `requirements-core.txt` - 核心依赖 (FastAPI, SQLAlchemy 等)
