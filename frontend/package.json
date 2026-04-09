@@ -5,6 +5,7 @@
   "type": "module",
   "main": "electron/main.js",
   "scripts": {
+    "setup": "node ../scripts/setup_frontend.js",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
