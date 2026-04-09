@@ -53,6 +53,10 @@ This project demonstrates how powerful ML systems can be wrapped in a seamless, 
 > - **Linux / macOS**: Use `bash run.sh`
 > - **Windows**: Use `run.bat`
 
+> **Installation Mode:**  
+> - **Mode 1 (Recommended)**: Core dependencies only – Fast, stable, guaranteed to work
+> - **Mode 2 (Optional)**: Full ML stack – Includes transformers, torch, etc.
+
 ### 1️⃣ Clone the Repository
 
 ```bash
@@ -71,6 +75,10 @@ bash run.sh
 # Windows
 run.bat
 ```
+
+Choose installation mode when prompted:
+- **Mode 1** for quick setup (recommended first time)
+- **Mode 2** for full ML capabilities
 
 ✅ Backend runs on `http://localhost:8000`  
 📖 API Docs: `http://localhost:8000/docs`

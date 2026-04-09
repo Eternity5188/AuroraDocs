@@ -34,12 +34,32 @@ if [ ! -d "venv" ]; then
 fi
 source venv/bin/activate
 
-# 自动安装依赖（静默模式）
-echo "✓ Installing dependencies..."
+# 选择安装模式
+echo ""
+echo "Select installation mode:"
+echo "  1) Core (Fast, recommended for first time)"
+echo "  2) Full ML (Includes transformers, torch, etc.)"
+echo ""
+read -p "Enter choice [1-2] (default: 1): " install_mode
+install_mode=${install_mode:-1}
+
+case $install_mode in
+    2)
+        echo "✓ Installing full ML dependencies..."
+        REQUIREMENTS="requirements-ml.txt"
+        ;;
+    *)
+        echo "✓ Installing core dependencies..."
+        REQUIREMENTS="requirements-core.txt"
+        ;;
+esac
+
+# 安装依赖
+echo "This may take several minutes..."
 pip install -q --upgrade pip 2>/dev/null || true
-pip install -q -r requirements.txt 2>/dev/null || {
-    echo "⚠️  Dependency installation failed, retrying..."
-    pip install -r requirements.txt
+pip install -q -r "$REQUIREMENTS" 2>/dev/null || {
+    echo "⚠️  First attempt failed, retrying with full output..."
+    pip install -r "$REQUIREMENTS"
 }
 
 # 自动创建 .env（如果不存在）
@@ -79,5 +99,6 @@ echo "⏹  Press Ctrl+C to stop"
 echo ""
 
 python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
 
 

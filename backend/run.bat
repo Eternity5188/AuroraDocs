@@ -23,11 +23,29 @@ if not exist "venv" (
 )
 call venv\Scripts\activate.bat
 
+REM 选择安装模式
+echo.
+echo Select installation mode:
+echo   1) Core (Fast, recommended for first time)
+echo   2) Full ML (Includes transformers, torch, etc.)
+echo.
+set /p install_mode="Enter choice [1-2] (default: 1): "
+if "%install_mode%"=="" set install_mode=1
+
+if "%install_mode%"=="2" (
+    echo [*] Installing full ML dependencies...
+    set "REQUIREMENTS=requirements-ml.txt"
+) else (
+    echo [*] Installing core dependencies...
+    set "REQUIREMENTS=requirements-core.txt"
+)
+
 REM 静默安装依赖
+echo This may take several minutes...
 python -m pip install -q --upgrade pip >nul 2>&1 || true
-pip install -q -r requirements.txt >nul 2>&1 || (
-    echo [!] Dependency installation failed, retrying...
-    pip install -r requirements.txt
+pip install -q -r !REQUIREMENTS! >nul 2>&1 || (
+    echo [!] First attempt failed, retrying with full output...
+    pip install -r !REQUIREMENTS!
 )
 
 REM 自动创建 .env（如果不存在）
