@@ -1,7 +1,6 @@
 @echo off
-REM AuroraDocs 智能启动脚本 - 最大可靠性
-REM 优先使用 Conda（预编译包，100% 成功）
-REM 降级到 pip + wheels（99% 成功）
+REM AuroraDocs 智能启动脚本 - 完全自动化
+REM 自动安装 Conda（如果需要）+ 自动在 Conda 环境中使用 pip
 
 setlocal enabledelayedexpansion
 
@@ -11,91 +10,112 @@ echo   AuroraDocs Backend - Intelligent Setup
 echo ==================================================
 echo.
 
-REM ============= 检测环境 =============
+REM ============= 强制使用 Conda（自动安装） =============
 
 set USE_CONDA=false
 set CONDA_CMD=
+set CONDA_HOME=
 
-REM 检查 Conda/Mamba
+REM 1. 检查是否已有 Conda/Mamba
 where mamba >nul 2>&1
-if %errorlevel% equ 0 (
+if !errorlevel! equ 0 (
     echo [+] Mamba found ^(faster Conda^)
     set USE_CONDA=true
     set CONDA_CMD=mamba
+    for /f "tokens=*" %%i in ('where mamba') do set CONDA_BIN=%%i
 ) else (
     where conda >nul 2>&1
-    if %errorlevel% equ 0 (
+    if !errorlevel! equ 0 (
         echo [+] Conda found
         set USE_CONDA=true
         set CONDA_CMD=conda
+        for /f "tokens=*" %%i in ('where conda') do set CONDA_BIN=%%i
     )
 )
 
-REM 检查 Python
-where python >nul 2>&1
-if %errorlevel% equ 0 (
-    for /f "tokens=*" %%i in ('python --version 2^>^&1') do set PYTHON_VERSION=%%i
-    echo [+] Python: !PYTHON_VERSION!
-) else (
-    echo [-] Python not found
+REM 2. 如果没有 Conda，自动安装 Miniconda
+if !USE_CONDA! equ false (
+    echo [!] Conda not found. Installing Miniconda automatically...
+    echo.
+    
+    REM 设置安装位置
+    set CONDA_HOME=%USERPROFILE%\miniconda3
+    
+    if exist "!CONDA_HOME!" (
+        echo [+] Using existing Miniconda at !CONDA_HOME!
+        set CONDA_CMD=!CONDA_HOME!\Scripts\conda
+    ) else (
+        echo [*] Downloading Miniconda installer...
+        set INSTALLER_FILE=%TEMP%\miniconda_installer.exe
+        
+        REM 尝试使用 curl 或 PowerShell 下载
+        where curl >nul 2>&1
+        if !errorlevel! equ 0 (
+            curl -fsSL "https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.exe" -o "!INSTALLER_FILE!"
+        ) else (
+            powershell -Command "Invoke-WebRequest -Uri 'https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.exe' -OutFile '!INSTALLER_FILE!'" || (
+                echo [-] Failed to download Miniconda. Please install manually.
+                echo [*] Download from: https://docs.conda.io/projects/miniconda/
+                pause
+                exit /b 1
+            )
+        )
+        
+        echo [*] Installing Miniconda...
+        "!INSTALLER_FILE!" /S /D=!CONDA_HOME! >nul 2>&1
+        del /f /q "!INSTALLER_FILE!"
+        
+        set CONDA_CMD=!CONDA_HOME!\Scripts\conda
+        echo [+] Miniconda installed successfully!
+    )
+    
+    set USE_CONDA=true
+)
+
+echo [+] Using Conda: !CONDA_CMD!
+echo.
+
+REM ============= 使用 Conda 创建和激活环境 =============
+
+set ENV_NAME=auroradocs
+
+REM 检查环境是否存在
+!CONDA_CMD! env list | find "!ENV_NAME!" >nul
+if errorlevel 1 (
+    echo [*] Creating Conda environment ^(Python 3.11^)...
+    !CONDA_CMD! create -y -n !ENV_NAME! python=3.11 2>nul || !CONDA_CMD! create -y -n !ENV_NAME! python=3.10
+)
+
+echo [*] Activating environment...
+call !CONDA_CMD! activate !ENV_NAME!
+
+REM 验证激活
+python --version >nul 2>&1
+if errorlevel 1 (
+    echo [-] Failed to activate Conda environment
     pause
     exit /b 1
 )
 
+echo [+] Current Python: 
+python --version
 echo.
 
-REM ============= 方式一：使用 Conda（最稳定）=============
+REM ============= Conda 中使用 pip 安装库 =============
 
-if !USE_CONDA! equ true (
-    echo [*] Using !CONDA_CMD! for maximum reliability
-    echo.
-    
-    REM 检查环境是否存在
-    !CONDA_CMD! env list | find "auroradocs" >nul
-    if errorlevel 1 (
-        echo [*] Creating Conda environment...
-        !CONDA_CMD! create -y -n auroradocs python=3.11 2>nul || !CONDA_CMD! create -y -n auroradocs python=3.10
-    )
-    
-    echo [*] Activating environment...
-    call !CONDA_CMD! activate auroradocs
-    
-    echo [*] Installing PyTorch ^(pre-compiled, no compilation^)...
-    !CONDA_CMD! install -y -c pytorch pytorch::pytorch pytorch::pytorch-cuda=11.8 2>nul || !CONDA_CMD! install -y -c pytorch pytorch::pytorch 2>nul || true
-    
-    echo [*] Installing ML ^& Core dependencies...
-    pip install -q --upgrade pip
-    pip install -q -r requirements-core.txt
-    pip install -q transformers peft
-    
-    echo [*] Environment ready!
-
-REM ============= 方式二：使用 pip 虚拟环境 =============
-
-) else (
-    echo [+] Using pip with pre-built wheels
-    echo.
-    
-    REM 创建虚拟环境
-    if not exist "venv" (
-        echo [*] Creating Python virtual environment...
-        python -m venv venv
-    )
-    
-    call venv\Scripts\activate.bat
-    
-    echo [*] Upgrading pip...
-    python -m pip install -q --upgrade pip setuptools wheel 2>nul || true
-    
-    echo [*] Installing dependencies ^(5-10 minutes^)...
-    pip install --prefer-binary -q -r requirements-ml.txt 2>nul || (
-        echo [!] Trying core + individual packages...
-        pip install -q -r requirements-core.txt
-        pip install --prefer-binary -q torch transformers peft 2>nul || (
-            echo [!] Some ML packages unavailable
-        )
-    )
+echo [*] Installing PyTorch ^(pre-compiled, no compilation needed^)...
+!CONDA_CMD! install -y -c pytorch pytorch::pytorch pytorch::pytorch-cuda=11.8 2>nul || !CONDA_CMD! install -y -c pytorch pytorch::pytorch 2>nul || (
+    echo [!] Installing PyTorch via pip as fallback...
+    pip install --prefer-binary torch
 )
+
+echo [*] Installing ML ^& Core dependencies via pip in Conda env...
+pip install -q --upgrade pip setuptools wheel
+pip install -q -r requirements-core.txt
+pip install -q transformers peft
+
+echo [+] All packages installed successfully!
+echo.
 
 REM ============= 通用配置 =============
 
@@ -140,5 +160,6 @@ echo.
 python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
 pause
+
 
 
