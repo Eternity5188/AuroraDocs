@@ -96,10 +96,13 @@ ENV_NAME="auroradocs"
 # 初始化 Conda shell
 eval "$($CONDA_CMD shell.bash hook 2>/dev/null)" || true
 
-# 检查环境是否存在
+# 检查环境是否存在（包括完整性检查）
 if ! $CONDA_CMD env list | grep -q "^$ENV_NAME "; then
     echo "✓ Creating Conda environment (Python 3.11)..."
     $CONDA_CMD create -y -n $ENV_NAME python=3.11 2>/dev/null || $CONDA_CMD create -y -n $ENV_NAME python=3.10
+    echo "✓ Environment created successfully!"
+else
+    echo "✓ Using existing Conda environment: $ENV_NAME"
 fi
 
 # 激活环境（这很关键！）
@@ -110,22 +113,32 @@ conda activate $ENV_NAME
 echo "✓ Current Python: $(python --version)"
 echo ""
 
-# ============= Conda 中使用 pip 安装库 =============
+# ============= 检查环境是否完整安装了包 =============
 
-echo "✓ Installing PyTorch (pre-compiled, no compilation needed)..."
-$CONDA_CMD install -y -c pytorch pytorch::pytorch pytorch::pytorch-cuda=11.8 2>/dev/null || \
-$CONDA_CMD install -y -c pytorch pytorch::pytorch 2>/dev/null || {
-    echo "⚠️  Installing PyTorch via pip as fallback..."
-    pip install --prefer-binary torch
-}
+# 检查关键包是否已安装
+if python -c "import torch, transformers, fastapi" 2>/dev/null; then
+    echo "✓ All required packages already installed in environment"
+    echo "✓ Skipping package installation..."
+else
+    echo "✓ Installing packages in environment..."
+    
+    echo "✓ Installing PyTorch (pre-compiled, no compilation needed)..."
+    $CONDA_CMD install -y -c pytorch pytorch::pytorch pytorch::pytorch-cuda=11.8 2>/dev/null || \
+    $CONDA_CMD install -y -c pytorch pytorch::pytorch 2>/dev/null || {
+        echo "⚠️  Installing PyTorch via pip as fallback..."
+        pip install --prefer-binary torch
+    }
+    
+    echo "✓ Installing ML & Core dependencies via pip in Conda env..."
+    pip install -q --upgrade pip setuptools wheel
+    pip install -q -r requirements-core.txt
+    pip install -q transformers peft
+    
+    echo "✓ All packages installed successfully!"
+fi
 
-echo "✓ Installing ML & Core dependencies via pip in Conda env..."
-pip install -q --upgrade pip setuptools wheel
-pip install -q -r requirements-core.txt
-pip install -q transformers peft
-
-echo "✓ All packages installed successfully!"
 echo ""
+
 
 # ============= 通用配置 =============
 

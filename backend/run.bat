@@ -84,6 +84,9 @@ REM 检查环境是否存在
 if errorlevel 1 (
     echo [*] Creating Conda environment ^(Python 3.11^)...
     !CONDA_CMD! create -y -n !ENV_NAME! python=3.11 2>nul || !CONDA_CMD! create -y -n !ENV_NAME! python=3.10
+    echo [+] Environment created successfully!
+) else (
+    echo [+] Using existing Conda environment: !ENV_NAME!
 )
 
 echo [*] Activating environment...
@@ -101,21 +104,32 @@ echo [+] Current Python:
 python --version
 echo.
 
-REM ============= Conda 中使用 pip 安装库 =============
+REM ============= 检查环境是否完整安装了包 =============
 
-echo [*] Installing PyTorch ^(pre-compiled, no compilation needed^)...
-!CONDA_CMD! install -y -c pytorch pytorch::pytorch pytorch::pytorch-cuda=11.8 2>nul || !CONDA_CMD! install -y -c pytorch pytorch::pytorch 2>nul || (
-    echo [!] Installing PyTorch via pip as fallback...
-    pip install --prefer-binary torch
+REM 检查关键包是否已安装
+python -c "import torch, transformers, fastapi" >nul 2>&1
+if !errorlevel! equ 0 (
+    echo [+] All required packages already installed in environment
+    echo [+] Skipping package installation...
+) else (
+    echo [*] Installing packages in environment...
+    
+    echo [*] Installing PyTorch ^(pre-compiled, no compilation needed^)...
+    !CONDA_CMD! install -y -c pytorch pytorch::pytorch pytorch::pytorch-cuda=11.8 2>nul || !CONDA_CMD! install -y -c pytorch pytorch::pytorch 2>nul || (
+        echo [!] Installing PyTorch via pip as fallback...
+        pip install --prefer-binary torch
+    )
+    
+    echo [*] Installing ML ^& Core dependencies via pip in Conda env...
+    pip install -q --upgrade pip setuptools wheel
+    pip install -q -r requirements-core.txt
+    pip install -q transformers peft
+    
+    echo [+] All packages installed successfully!
 )
 
-echo [*] Installing ML ^& Core dependencies via pip in Conda env...
-pip install -q --upgrade pip setuptools wheel
-pip install -q -r requirements-core.txt
-pip install -q transformers peft
-
-echo [+] All packages installed successfully!
 echo.
+
 
 REM ============= 通用配置 =============
 

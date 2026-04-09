@@ -75,6 +75,8 @@ run.bat
 **🎯 The script automatically handles everything:**
 - ✅ Detects Conda/Mamba (if available)
 - ✅ Automatically installs Miniconda (if needed) 
+- ✅ **Checks if environment already exists** (skips creation)
+- ✅ **Checks if packages already installed** (skips installation)
 - ✅ Creates isolated Python environment
 - ✅ Installs PyTorch (pre-compiled, no compilation!)
 - ✅ Installs all dependencies (transformers, FastAPI, etc.)
@@ -84,6 +86,7 @@ run.bat
 **📊 Why this works everywhere:**
 - **With Conda/Mamba**: Instant, zero compilation
 - **Without Conda**: Auto-installs Miniconda, then same
+- **Re-run safe**: Skips already completed steps
 - **Result**: 99%+ success rate on AutoDL, Windows, macOS, Linux!
 
 ✅ Backend runs on `http://localhost:8000`  
