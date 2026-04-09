@@ -11,7 +11,7 @@
 
 **通用文档智能生成平台** - 基于 LoRA 微调大模型，为各行业提供个性化文档生成解决方案
 
-[🚀 快速开始](#快速开始) • [🐛 问题反馈](https://github.com/your-repo/AuroraDocs/issues)
+[🚀 快速开始](#快速开始) • [🐛 问题反馈](https://github.com/Eternity5188/AuroraDocs/issues)
 
 </div>
 
@@ -118,59 +118,70 @@ E:\Software\AuroraDocs/
 ## 🚀 快速开始
 
 ### 📋 系统要求
+
+#### 前端客户端（轻量级）
 - **操作系统**：Windows 10+ / macOS 10.15+ / Ubuntu 18.04+
+- **内存**：4GB 或以上
+- **存储**：200MB 可用空间
+- **网络**：连接到后端服务器
+
+#### 后端服务器（GPU 计算）
+- **操作系统**：Linux（推荐 Ubuntu 20.04+）
 - **Python**：3.9 或更高版本
-- **Node.js**：16 或更高版本
-- **Docker**：20.10+ (可选，用于容器化部署)
+- **Docker**：20.10+ 和 Docker Compose
 - **GPU**：NVIDIA GPU with CUDA 11.8+ (推荐 RTX 3090/4090 用于训练)
+- **内存**：32GB+ (根据模型大小调整)
+- **存储**：100GB+ (模型 + 数据)
 
 ### ⚡ 一键安装 (推荐)
 
-#### 方式一：桌面应用 (Windows 用户)
+#### 方式一：前端客户端（推荐）
 ```bash
-# 下载最新发布版本
-# https://github.com/your-repo/AuroraDocs/releases
+# 1. 下载最新发布版本
+https://github.com/Eternity5188/AuroraDocs/releases
 
-# 运行安装包，自动配置本地环境
+# 2. 运行安装包（Windows）
+AuroraDocs-Setup.exe
+
+# 3. 启动应用后配置后端服务器地址
+# 在设置面板中输入：http://[服务器IP]:8000
 ```
 
-#### 方式二：Docker 部署
+#### 方式二：后端服务器部署
 ```bash
-git clone https://github.com/your-repo/AuroraDocs.git
+# 1. 克隆项目到服务器
+git clone https://github.com/Eternity5188/AuroraDocs.git
 cd AuroraDocs
 
-# 启动完整服务栈
+# 2. 创建环境文件
+cp .env.example .env
+# 编辑 .env 配置数据库、GPU 等参数
+
+# 3. 启动服务栈
 docker-compose up -d
 
-# 访问 http://localhost:3000
+# 4. 确认 API 是否运行
+curl http://localhost:8000/docs
 ```
 
-### 🌐 访问应用
-- **Web 界面**：http://localhost:5173
-- **API 文档**：http://localhost:8000/docs
-- **任务监控**：http://localhost:5555 (Flower)
+### 🌐 服务地址
+
+**前端客户端**
+- Windows/Mac/Linux 桌面应用
+
+**后端服务器**（在服务器部署后）
+- **API 文档**：http://[服务器IP]:8000/docs
+- **API 基础**：http://[服务器IP]:8000
 
 ---
 
 ## 📖 使用指南
 
-### 🎯 基础使用流程
-
-1. **📤 上传样例文档**
-   - 支持 PDF、DOCX、TXT、MD 格式
-   - 建议上传 3-5 个高质量样例
-
-2. **🔧 配置 API**
-   - 支持 OpenAI、Azure OpenAI、自定义 API
-   - 本地存储，不泄露密钥
-
-3. **🚀 提交训练任务**
-   - 设置模型参数 (epochs, learning rate)
-   - 选择 Prompt 模板
-
-4. **📊 监控训练进度**
-   - 实时查看任务状态
-   - 下载训练结果
+详细的使用教程请在客户端应用的 **"教程"** 页面查看，包括：
+- 如何上传样例文档
+- 如何配置 API 密钥
+- 如何提交训练任务
+- 如何查看和下载结果
 
 ---
 
