@@ -2,14 +2,32 @@ from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from fastapi.responses import JSONResponse
 from uuid import uuid4
 from sqlalchemy.orm import Session
-from app.schemas.train import TrainTaskCreate, TrainTaskStatus
-from app.tasks.train_tasks import run_training_task
-from app.core.config import settings
-from app.core.db import get_db
-from app.models.task import TrainingTask
-from app.utils.file_utils import ensure_directory
+import importlib
+from ..schemas.train import TrainTaskCreate, TrainTaskStatus
+from ..tasks.train_tasks import run_training_task
+from ..core.config import settings
+from ..core.db import get_db
+from ..utils.file_utils import ensure_directory
 from celery.result import AsyncResult
-from app.core.logger import get_logger
+from ..core.logger import get_logger
+
+
+def _load_training_task_model():
+    for module_name in [
+        "app.models.task",
+        "models.task",
+        "app.model.task",
+        "model.task",
+    ]:
+        try:
+            module = importlib.import_module(module_name)
+            return getattr(module, "TrainingTask")
+        except Exception:
+            continue
+    raise ModuleNotFoundError("Unable to load TrainingTask model")
+
+
+TrainingTask = _load_training_task_model()
 
 logger = get_logger("api.train")
 router = APIRouter()

@@ -1,8 +1,26 @@
-from app.tasks.celery_app import celery_app
-from app.services.training_service import TrainingService
-from app.core.db import SessionLocal
-from app.models.task import TrainingTask
-from app.core.logger import get_logger
+from .celery_app import celery_app
+from ..services.training_service import TrainingService
+from ..core.db import SessionLocal
+from ..core.logger import get_logger
+import importlib
+
+
+def _load_training_task_model():
+    for module_name in [
+        "app.models.task",
+        "models.task",
+        "app.model.task",
+        "model.task",
+    ]:
+        try:
+            module = importlib.import_module(module_name)
+            return getattr(module, "TrainingTask")
+        except Exception:
+            continue
+    raise ModuleNotFoundError("Unable to load TrainingTask model")
+
+
+TrainingTask = _load_training_task_model()
 
 logger = get_logger("tasks.run_training_task")
 

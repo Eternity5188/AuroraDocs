@@ -1,9 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api import train
-from app.core.config import settings
-from app.core.db import init_db
-from app.core.logger import get_logger
+from .api import train
+from .core.config import settings
+from .core.db import init_db
+from .core.logger import get_logger
 
 logger = get_logger("main")
 app = FastAPI(
