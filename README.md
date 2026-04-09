@@ -60,7 +60,28 @@ git clone https://github.com/Eternity5188/AuroraDocs.git
 cd AuroraDocs
 ```
 
-### 2️⃣ Start Backend (One Command!)
+### 2️⃣ Check & Fix Dependencies (Optional but Recommended)
+
+```bash
+cd backend
+
+# Python 3 (all platforms)
+python3 check_dependencies.py
+
+# OR bash (Linux/Mac)
+bash check_dependencies.sh
+
+# OR batch (Windows)
+check_dependencies.bat
+```
+
+This will:
+- ✅ Check all installed packages
+- ✅ Compare versions with requirements
+- ✅ **Automatically fix any mismatches**
+- ✅ Install any missing packages
+
+### 3️⃣ Start Backend (One Command!)
 
 ```bash
 cd backend
@@ -87,6 +108,7 @@ run.bat
 - **With Conda/Mamba**: Instant, zero compilation
 - **Without Conda**: Auto-installs Miniconda, then same
 - **Re-run safe**: Skips already completed steps
+- **Dependency-safe**: Automatically fixes version conflicts
 - **Result**: 99%+ success rate on AutoDL, Windows, macOS, Linux!
 
 ✅ Backend runs on `http://localhost:8000`  
