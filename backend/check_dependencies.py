@@ -16,9 +16,7 @@ import sys
 import os
 import re
 import json
-from pathlib import Path
 from packaging import version
-import pkg_resources
 
 # 颜色代码
 class Color:
@@ -217,12 +215,40 @@ def parse_requirements_file(file_path):
     
     return packages
 
-def get_installed_version(package_name):
-    """获取已安装的包版本，如果未安装返回 None"""
+def get_env_python_and_pip(env_path):
+    """根据环境路径返回 python 和 pip 可执行文件路径"""
+    if os.name == "nt":
+        python_exe = os.path.join(env_path, "Scripts", "python.exe")
+        pip_exe = os.path.join(env_path, "Scripts", "pip.exe")
+    else:
+        python_exe = os.path.join(env_path, "bin", "python")
+        pip_exe = os.path.join(env_path, "bin", "pip")
+    return python_exe, pip_exe
+
+def get_installed_version(python_exe, package_name):
+    """在目标环境中查询已安装版本；未安装返回 None"""
+    probe_code = (
+        "import importlib.metadata as m\n"
+        "import sys\n"
+        "try:\n"
+        "    print(m.version(sys.argv[1]))\n"
+        "except m.PackageNotFoundError:\n"
+        "    print('__NOT_INSTALLED__')\n"
+    )
     try:
-        dist = pkg_resources.get_distribution(package_name)
-        return dist.version
-    except pkg_resources.DistributionNotFound:
+        result = subprocess.run(
+            [python_exe, "-c", probe_code, package_name],
+            capture_output=True,
+            text=True,
+            timeout=8
+        )
+        if result.returncode != 0:
+            return None
+        output = result.stdout.strip()
+        if output == "__NOT_INSTALLED__" or not output:
+            return None
+        return output
+    except Exception:
         return None
 
 def normalize_package_name(name):
@@ -237,7 +263,13 @@ def check_version_match(installed, required):
     # 解析版本说明符
     if '==' in required:
         required_ver = required.split('==')[1].strip()
-        return installed == required_ver
+        # 兼容本地版本标签，如 2.2.0+cu121 与 2.2.0
+        if installed == required_ver:
+            return True
+        try:
+            return version.parse(installed).base_version == version.parse(required_ver).base_version
+        except Exception:
+            return False
     elif '>=' in required:
         required_ver = required.split('>=')[1].strip()
         return version.parse(installed) >= version.parse(required_ver)
@@ -267,29 +299,23 @@ def main():
     
     env_name, env_info = selected_env
     env_path = env_info['path']
-    env_type = env_info['type']
     
     print()
     
     # ============= 步骤 1: 激活环境 =============
     print_info("[1/5] Activating environment...")
     
-    # 在目标环境中运行 pip 命令
-    if env_type == "conda":
-        if os.name == "nt":  # Windows
-            pip_exe = os.path.join(env_path, "Scripts", "pip.exe")
-        else:  # Linux/Mac
-            pip_exe = os.path.join(env_path, "bin", "pip")
-    else:  # venv
-        if os.name == "nt":  # Windows
-            pip_exe = os.path.join(env_path, "Scripts", "pip.exe")
-        else:  # Linux/Mac
-            pip_exe = os.path.join(env_path, "bin", "pip")
+    python_exe, pip_exe = get_env_python_and_pip(env_path)
     
+    if not os.path.exists(python_exe):
+        print_error(f"python not found at {python_exe}")
+        return 1
+
     if not os.path.exists(pip_exe):
         print_error(f"pip not found at {pip_exe}")
         return 1
     
+    print_success(f"Using python: {python_exe}")
     print_success(f"Using pip: {pip_exe}")
     print()
     
@@ -325,7 +351,7 @@ def main():
     wrong_version_packages = {}
     
     for pkg_name, version_spec in sorted(all_packages.items()):
-        installed_version = get_installed_version(pkg_name)
+        installed_version = get_installed_version(python_exe, pkg_name)
         
         if installed_version is None:
             # 包未安装
@@ -401,7 +427,7 @@ def main():
         
         all_fixed = True
         for pkg_name, version_spec in missing_packages.items():
-            installed_version = get_installed_version(pkg_name)
+            installed_version = get_installed_version(python_exe, pkg_name)
             if installed_version is None:
                 print_error(f"{pkg_name}: Still missing!")
                 all_fixed = False
@@ -409,7 +435,7 @@ def main():
                 print_success(f"{pkg_name}: {installed_version}")
         
         for pkg_name, version_spec in wrong_version_packages.items():
-            installed_version = get_installed_version(pkg_name)
+            installed_version = get_installed_version(python_exe, pkg_name)
             if installed_version and check_version_match(installed_version, version_spec):
                 print_success(f"{pkg_name}: {installed_version}")
             else:

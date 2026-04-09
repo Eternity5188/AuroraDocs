@@ -1,5 +1,5 @@
-from typing import List
-from pydantic_settings import BaseSettings
+from typing import List, Annotated
+from pydantic_settings import BaseSettings, NoDecode
 from pydantic import field_validator, ConfigDict, Field
 import json as json_module
 
@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     )
     
     PROJECT_NAME: str = "AuroraDocs Backend"
-    CORS_ORIGINS: List[str] = Field(default=["http://localhost:5173"])
+    CORS_ORIGINS: Annotated[List[str], NoDecode] = Field(default=["http://localhost:5173"])
     DATABASE_URL: str = "sqlite:///./auroradocs.db"
     REDIS_URL: str = "redis://localhost:6379/0"
     MINIO_ENDPOINT: str = "localhost:9000"

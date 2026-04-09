@@ -159,7 +159,7 @@ MODEL_BASE_PATH=./models
 SAMPLE_UPLOAD_PATH=./data/samples
 VLLM_HOST=localhost
 VLLM_PORT=8001
-CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+CORS_ORIGINS=["http://localhost:5173","http://127.0.0.1:5173"]
 VITE_API_BASE_URL=http://localhost:8000/api
 EOF
 else
@@ -169,6 +169,11 @@ else
         sed -i 's|DATABASE_URL=postgresql://user:password.*|DATABASE_URL=sqlite:///./auroradocs.db|g' .env
         sed -i 's|MODEL_BASE_PATH=.*|MODEL_BASE_PATH=./models|g' .env
         sed -i 's|SAMPLE_UPLOAD_PATH=.*|SAMPLE_UPLOAD_PATH=./data/samples|g' .env
+    fi
+
+    # 兼容旧配置：如果 CORS_ORIGINS 为空，补默认值
+    if grep -q '^CORS_ORIGINS=$' .env; then
+        sed -i 's|^CORS_ORIGINS=$|CORS_ORIGINS=["http://localhost:5173","http://127.0.0.1:5173"]|g' .env
     fi
 fi
 

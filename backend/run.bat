@@ -150,7 +150,7 @@ if not exist ".env" (
         echo SAMPLE_UPLOAD_PATH=./data/samples
         echo VLLM_HOST=localhost
         echo VLLM_PORT=8001
-        echo CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+        echo CORS_ORIGINS=["http://localhost:5173","http://127.0.0.1:5173"]
         echo VITE_API_BASE_URL=http://localhost:8000/api
     ) > .env
 )
